@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="generator" content="Hugo 0.79.1" />
+
+  <title>A tutorial on programmatically drawing CONSORT diagrams from data using R and ggplot2 &middot; Matt Johnson</title>
+
+    
+
+  
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/1.0.0/pure-min.css">
+
+  <!--[if lte IE 8]>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/1.0.0/grids-responsive-old-ie-min.css">
+  <![endif]-->
+  <!--[if gt IE 8]><!-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/1.0.0/grids-responsive-min.css">
+  <!--<![endif]-->
+
+  <!--[if lte IE 8]>
+  <link rel="stylesheet" href="/css/side-menu-old-ie.css">
+  <![endif]-->
+  <!--[if gt IE 8]><!-->
+  <link rel="stylesheet" href="/css/side-menu.css">
+  <!--<![endif]-->
+
+  <link rel="stylesheet" href="/css/blackburn.css">
+
+  
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.9.0/css/all.css">
+
+  
+  <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet" type="text/css">
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+ 
+  
+
+  
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/androidstudio.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+
+  <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon" />
+
+  
+  
+
+</head>
+
+
+<body>
+<div id="layout">
+
+  
+<a href="#menu" id="menuLink" class="menu-link">
+  
+  <span></span>
+</a>
+<div id="menu">
+
+  
+  <a class="pure-menu-heading brand" href="/">Matt Johnson</a>
+
+
+  <div class="pure-menu">
+    <ul class="pure-menu-list">
+      
+      
+        <li class="pure-menu-item">
+          <a class="pure-menu-link" href="/about/"><i class='fa fa-user fa-fw'></i>About</a>
+      
+        </li>
+      
+      
+        <li class="pure-menu-item">
+          <a class="pure-menu-link" href="/post/"><i class='fa fa-list fa-fw'></i>Posts</a>
+      
+        </li>
+      
+    </ul>
+  </div>
+
+  <div class="pure-menu social">
+  <ul class="pure-menu-list">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <li class="pure-menu-item">
+      <a class="pure-menu-link" href="https://github.com/ma-json" rel="me" target="_blank"><i class="fab fa-github-square fa-fw"></i>GitHub</a>
+    </li>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+  </ul>
+</div>
+
+
+  <div>
+  <div class="small-print">
+    <small>&copy; 2016. All rights reserved.</small>
+  </div>
+  <div class="small-print">
+    <small>Built with&nbsp;<a href="https://gohugo.io/" target="_blank">Hugo</a></small>
+    <small>Theme&nbsp;<a href="https://github.com/yoshiharuyamashita/blackburn" target="_blank">Blackburn</a></small>
+  </div>
+</div>
+
+</div>
+
+
+  <div id="main">
+
+
+<div class="header">
+  <h1>A tutorial on programmatically drawing CONSORT diagrams from data using R and ggplot2</h1>
+  <h2></h2>
+</div>
+<div class="content">
+
+  <div class="post-meta">
+
+  <div>
+    <i class="fa fa-calendar fa-fw"></i>
+    <time>28 Dec 2020</time>
+  </div>
+
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  <div>
+    <i class="fa fa-tags fa-fw"></i>
+    
+      <a class="post-taxonomy-tag" href="/tags/r">R</a>&nbsp;&#47;
+    
+      <a class="post-taxonomy-tag" href="/tags/graphics">graphics</a>&nbsp;&#47;
+    
+      <a class="post-taxonomy-tag" href="/tags/epidemiology">epidemiology</a>
+    
+  </div>
+  
+  
+
+</div>
+
+  
+<link href="/rmarkdown-libs/tabwid/tabwid.css" rel="stylesheet" />
+
+
+<hr />
+<p>CONSORT (Consolidated Standards Of Reporting Trials) diagrams are commonly included in the reporting of clinical trials, where they are essentially used to track the flow of participants though different subgroups over the course of the trial. More information can be found at the <strong>CONSORT website</strong> (linked <a href="http://www.consort-statement.org/">here</a>). I recently needed to draw a CONSORT diagram, and while looking around at the various R packages that can be used to do this I also found an <strong>RPubs blog article written by Peter Higgins</strong> (linked <a href="https://rpubs.com/phiggins/461686">here</a>), in which he describes a method for drawing a CONSORT diagram using R’s ggplot2 package. The key idea underpinning his method is that the x and y dimensions of an empty plot object can be interpreted as coordinates onto which additional graphical objects can be placed to gradually build up the diagram.</p>
+<p>This tutorial outlines one possible approach to building a CONSORT diagram programmatically in R, using Peter Higgins’ method as a basis, so I would encourage readers to look at his original article for more background and rationale.</p>
+<p>My main development was to build the diagram programmatically, linking the output directly to the underlying data. We may sometimes find that our source dataset or reporting requirements change during a study, in which case updating a series of hard coded values in committed code can be a lengthy process, and prone to error. On the other hand, if we create our outputs programmatically using global variables and lookup tables then updating them should be much simpler, or perhaps even automatic, after a change to the underlying data. This approach also helps us to build code modules that can be extracted and, with a small number of tweaks, reused for other projects and purposes.</p>
+<p>The complete R script that I used to create a diagram structured and formatted for the study I was working on can be found on my <strong>GitHub page</strong> (linked <a href="https://github.com/ma-json/CONSORT_tutorial">here</a>), but is also included in code chunks below alongside explanatory text. This is a flexible and scalable method, so you can take a similar approach to drawing a CONSORT diagram of any size, structure and format, and could equally adapt it for use in any situation where you need to link graphics directly to source data.</p>
+<p><br/></p>
+<hr />
+<div id="objective" class="section level2">
+<h2>Objective</h2>
+<p>The objective of this tutorial is to generate the following CONSORT diagram from a sample dataset:</p>
+<center>
+<p><img src="/images/final_diagram.png" /></p>
+</center>
+<p>The first thing to say is that I have found it helpful to think of the diagram as sitting on a grid, so I use the following terminology throughout this tutorial:</p>
+<ul>
+<li>‘Layers’ to describe the horizontals;</li>
+<li>‘Columns’ to describe the verticals; and</li>
+<li>‘Cells’ to describe the graphical objects at the intersection of layers and columns.</li>
+</ul>
+<p>So we can think of the diagram above as consisting of five layers (which I number 1 to 5 from top to bottom) and four columns (numbered 1 to 4 from left to right). As an example, the cell at the intersection of layer 2/column 3 contains the text ‘Subgroup N=50’. Overall, only 15 of the 20 possible cells are filled in the final diagram.</p>
+<p><br/></p>
+<hr />
+</div>
+<div id="creating-a-sample-dataset" class="section level2">
+<h2>Creating a sample dataset</h2>
+<p>Let’s start by creating a sample dataset:</p>
+<pre class="r"><code>  id &lt;- seq(1:100)
+  lyr_2 &lt;- rep(2:3, 50)
+  lyr_3 &lt;- rep(1:4, 25)
+  exclusion_lyr_4 &lt;- c(rep(0, 40), rep(1, 20), rep(2, 20), rep(3, 20))
+  lyr_5 &lt;- c(rep(1:4, 10), rep(0, 60))
+  df &lt;- as.data.frame(cbind(id, lyr_2, lyr_3, exclusion_lyr_4, lyr_5))
+  rm(id, lyr_2, lyr_3, exclusion_lyr_4, lyr_5)</code></pre>
+<p>The dataset has 100 observations; one row per observation, each with a unique identifier. In this way it reproduces a format that you might often see in clinical studies, but it also includes a series of variables that we’ll use to guide the placement of each observation at each layer of the final diagram. For clarity, let’s take a look at a couple of observations in detail:</p>
+<pre class="r"><code>  subset &lt;- df[which(df$id == 1 | df$id == 51), ]
+  subset</code></pre>
+<p>This produces the following output:</p>
+<template id="37c536fc-9c08-476b-a59e-927bd28a0a9f"><style>
+.tabwid table{
+  border-collapse:collapse;
+  line-height:1;
+  margin-left:auto;
+  margin-right:auto;
+  border-width: 0;
+  display: table;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-color: transparent;
+}
+.tabwid_left table{
+  margin-left:0;
+}
+.tabwid_right table{
+  margin-right:0;
+}
+.tabwid td {
+    padding: 0;
+}
+.tabwid a {
+  text-decoration: none;
+}
+.tabwid thead {
+    background-color: transparent;
+}
+.tabwid tfoot {
+    background-color: transparent;
+}
+.tabwid table tr {
+background-color: transparent;
+}
+</style><div class="tabwid"><style>.cl-b133abfc{border-collapse:collapse;}.cl-b127b2a2{font-family:'Courier New';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b127b2a3{font-family:'Courier New';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b127b2a4{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:3pt;padding-top:3pt;padding-left:3pt;padding-right:3pt;line-height: 1;background-color:transparent;}.cl-b12850d6{width:91pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b12850d7{width:39pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b12850d8{width:27pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b12850d9{width:91pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b12850da{width:39pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b12850db{width:27pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b12850dc{width:27pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b12850dd{width:39pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b12850de{width:91pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table class='cl-b133abfc'>
+<thead><tr style="overflow-wrap:break-word;"><td class="cl-b12850dc"><p class="cl-b127b2a4"><span class="cl-b127b2a2">id</span></p></td><td class="cl-b12850dd"><p class="cl-b127b2a4"><span class="cl-b127b2a2">lyr_2</span></p></td><td class="cl-b12850dd"><p class="cl-b127b2a4"><span class="cl-b127b2a2">lyr_3</span></p></td><td class="cl-b12850de"><p class="cl-b127b2a4"><span class="cl-b127b2a2">exclusion_lyr_4</span></p></td><td class="cl-b12850dd"><p class="cl-b127b2a4"><span class="cl-b127b2a2">lyr_5</span></p></td></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-b12850d8"><p class="cl-b127b2a4"><span class="cl-b127b2a3">1</span></p></td><td class="cl-b12850d7"><p class="cl-b127b2a4"><span class="cl-b127b2a3">2</span></p></td><td class="cl-b12850d7"><p class="cl-b127b2a4"><span class="cl-b127b2a3">1</span></p></td><td class="cl-b12850d6"><p class="cl-b127b2a4"><span class="cl-b127b2a3">0</span></p></td><td class="cl-b12850d7"><p class="cl-b127b2a4"><span class="cl-b127b2a3">1</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b12850db"><p class="cl-b127b2a4"><span class="cl-b127b2a3">51</span></p></td><td class="cl-b12850da"><p class="cl-b127b2a4"><span class="cl-b127b2a3">2</span></p></td><td class="cl-b12850da"><p class="cl-b127b2a4"><span class="cl-b127b2a3">3</span></p></td><td class="cl-b12850d9"><p class="cl-b127b2a4"><span class="cl-b127b2a3">1</span></p></td><td class="cl-b12850da"><p class="cl-b127b2a4"><span class="cl-b127b2a3">0</span></p></td></tr></tbody></table></div></template>
+<div id="a580fa9c-1d8f-4bef-a414-0322ee66b6e9"></div>
+<script>
+var dest = document.getElementById("a580fa9c-1d8f-4bef-a414-0322ee66b6e9");
+var template = document.getElementById("37c536fc-9c08-476b-a59e-927bd28a0a9f");
+var caption = template.content.querySelector("caption");
+if(caption) {
+  caption.style.cssText = "display:block;"
+  var newcapt = document.createElement("p");
+  newcapt.appendChild(caption)
+  dest.parentNode.insertBefore(newcapt, dest.previousSibling);
+}
+var fantome = dest.attachShadow({mode: 'open'});
+var templateContent = template.content;
+fantome.appendChild(templateContent);
+fantome.appendChild(templateContent);
+</script>
+
+<p>The values in the <code>lyr_2</code>, <code>lyr_3</code> and <code>lyr_5</code> variables indicate the column into which a given observation should be placed at that layer. So, observation 1 appears in the cells at layer 2/column 2, layer 3/column 1 and layer 5/column 1. Notice that layer 4 is handled a little differently as it lists the number of observations excluded between layers 3 and 5. Any non-zero value in the <code>exclusion_lyr_4</code> indicates that the observation has been excluded, with the specific value indicating which of the three exclusion criteria applies. So, observation 51 appears in the cells at layer 2/column 2 and layer 3/column 3, but it doesn’t appear at layer 5 at all, since it is excluded at layer 4 under the first criterion.</p>
+<p>Since this is a manufactured example I’ve manually created a series of variables for this purpose, but in a real-world application you may already have suitable variables present in your dataset. In a clinical trial, for example, layer 2 might represent the number of participants randomised to intervention and control groups.</p>
+<p><br/></p>
+<hr />
+</div>
+<div id="setting-up-the-plot" class="section level2">
+<h2>Setting up the plot</h2>
+<p>As I mentioned, we’re going to create an empty plot object and then draw components of the CONSORT diagram onto it. We’ll know in advance certain attributes that the diagram will have, so we can build the dimensions of our plot around them.</p>
+<p>We start by hard coding a few global variables for the number of columns and layers we’ll need, the column width and layer depth, and the horizontal and vertical spaces between cells:</p>
+<pre class="r"><code>  col_nr &lt;- as.integer(4)
+  col_width &lt;- as.integer(28)
+  col_spc &lt;- as.integer(5)
+  lyr_nr &lt;- as.integer(5)
+  lyr_depth &lt;- as.integer(13)
+  lyr_spc &lt;- as.integer(8)</code></pre>
+<p>Next, we calculate the overall plot dimensions based on these attributes. In this case the plot width is built up from four columns of 28 units wide, and three internal spaces and two edge spaces of 5 units wide. The plot height is built up from five layers of 13 units depth, and four internal spaces and two edge spaces of 8 units depth.</p>
+<pre class="r"><code>  plot_width &lt;- as.integer((col_nr * col_width) + ((col_nr + 1) * col_spc)) 
+  plot_height &lt;- as.integer((lyr_nr * lyr_depth) + ((lyr_nr + 1) * lyr_spc)) </code></pre>
+<p>Finally, we place the total values for the plot width and height into a very simple data frame. From now on we reinterpret these values as x and y dimensions respectively, so when we use this data frame to initialise our call to ggplot2 it will create a plot with x axis scaled 1 to 137 units and y axis scaled 1 to 113 units.</p>
+<pre class="r"><code>  plot_area &lt;- as.data.frame(matrix(ncol = 2, nrow = 2, dimnames = list(NULL, c(&quot;x&quot;, &quot;y&quot;)))) 
+  plot_area$x &lt;- c(1, plot_width)
+  plot_area$y &lt;- c(1, plot_height)</code></pre>
+<p><br/></p>
+<hr />
+</div>
+<div id="setting-up-the-grid" class="section level2">
+<h2>Setting up the grid</h2>
+<p>Now we need to place our grid of layers and columns onto the x and y scales. Let’s start with columns. First we preallocate an empty matrix consisting of four lists (one for each column). Initially all list positions will contain NAs, but the lists will eventually be populated with three values each:</p>
+<ul>
+<li>First, the x value of the left extent of the column;</li>
+<li>Second, the x value of the column centrepoint; and</li>
+<li>Third, the x value of the right extent of the column.</li>
+</ul>
+<pre class="r"><code>  matr_col_dim &lt;- matrix(
+    c(
+      list(c(NA, NA, NA)), 
+      list(c(NA, NA, NA)), 
+      list(c(NA, NA, NA)), 
+      list(c(NA, NA, NA))
+    ), 
+    nrow = 1, 
+    ncol = col_nr
+  )</code></pre>
+<p>We then use a for loop to populate the matrix with the appropriate x values:</p>
+<pre class="r"><code>  for(i in col_nr:1) {
+    {
+      if(i == col_nr)
+        matr_col_dim[[1, i]][3] = plot_width - col_spc
+      else
+        matr_col_dim[[1, i]][3] = matr_col_dim[[1, i + 1]][1] - col_spc
+    }
+    matr_col_dim[[1, i]][2] = matr_col_dim[[1, i]][3] - (col_width / 2)
+    matr_col_dim[[1, i]][1] = matr_col_dim[[1, i]][3] - col_width
+  }</code></pre>
+<p>Notice that we are indexing into the matrix using a combination of double and single square brackets. This is necessary because we are working with a multi-dimensional structure: our loop first selects a list from within a matrix (using double square brackets, <code>[[]]</code>), and then a single position within that list (using single square brackets, <code>[]</code>). So, <code>matr_col_dim[[1, i]][1]</code> indexes to the first position of the list found in row 1/column i of the matrix (where <code>i</code> is the loop iteration), for example. More information on this concept can be found in the <strong>R Language Definition document</strong> (linked <a href="https://cran.r-project.org/doc/manuals/R-lang.html#Indexing">here</a>) and the ‘<strong>Subsetting</strong>’ chapter of Hadley Wickham’s ‘<strong>Advanced R</strong>’ book (linked <a href="https://adv-r.hadley.nz/subsetting.html">here</a>).</p>
+<p>After running the loop we can see that the values in the list at <code>matr_col_dim[[1, 1]]</code> are 5, 19 and 33, meaning that the left extent of column 1 is to be placed with an x value of 5, its centrepoint with an x value of 19 and its right extent with an x value of 33. The convention of indexing the left extent of a column to list position 1, its centrepoint to position 2 and its right extent to position 3 is used for each list in this matrix.</p>
+<p>Now let’s do the same for layers. The procedure is exactly the same except now each list indexes the y value of the lower extent of a layer to list position 1, the y value of its centrepoint to position 2 and the y value of its upper extent to position 3.</p>
+<pre class="r"><code>  matr_lyr_dim &lt;- matrix(
+    c(
+      list(c(NA, NA, NA)), 
+      list(c(NA, NA, NA)), 
+      list(c(NA, NA, NA)),
+      list(c(NA, NA, NA)),
+      list(c(NA, NA, NA))
+    ), 
+    nrow = lyr_nr, 
+    ncol = 1
+  )
+
+  for(i in 1:lyr_nr) {
+    {
+      if(i == 1)
+        matr_lyr_dim[[i, 1]][3] = plot_height - lyr_spc
+      else
+        matr_lyr_dim[[i, 1]][3] = matr_lyr_dim[[i - 1, 1]][1] - lyr_spc
+    }
+    matr_lyr_dim[[i, 1]][2] = matr_lyr_dim[[i, 1]][3] - (lyr_depth / 2)
+    matr_lyr_dim[[i, 1]][1] = matr_lyr_dim[[i, 1]][3] - lyr_depth
+  }</code></pre>
+<p>We’ve just created our first lookup tables, and we’ll reference them repeatedly throughout the rest of our code. There are many advantages of using lookup tables in this way. First, performing a batch of calculations within a single code module should limit the number of updates needed later on if there are any changes to the underlying data. Second, as we’ll need to use the same results multiple times it’s faster to collect them from a static table than to calculate them repeatedly.</p>
+<p><br/></p>
+<hr />
+</div>
+<div id="more-lookup-tables" class="section level2">
+<h2>More lookup tables</h2>
+<p>Now we’ll create some more lookup tables to store the text and values that will fill each cell. First, a lookup table for the text:</p>
+<pre class="r"><code>  matr_cell_text &lt;- matrix(
+    c(
+      NA, &quot;All participants\nN=&quot;, NA, NA, 
+      NA, &quot;Subgroup\nN=&quot;, &quot;Subgroup\nN=&quot;, NA, 
+      &quot;Subgroup\nN=&quot;, &quot;Subgroup\nN=&quot;, &quot;Subgroup\nN=&quot;, &quot;Subgroup\nN=&quot;, 
+      NA, NA, NA, NA, 
+      &quot;Subgroup after exclusions\nN=&quot;, &quot;Subgroup after exclusions\nN=&quot;, &quot;Subgroup after exclusions\nN=&quot;, &quot;Subgroup after exclusions\nN=&quot; 
+    ), 
+    nrow = lyr_nr, 
+    byrow = TRUE,
+    dimnames = list(
+      c(seq(1, lyr_nr)), 
+      c(seq(1, col_nr)) 
+    )
+  )</code></pre>
+<p>Let’s look at the table we’ve created (the row and column numbers are shown explicitly for illustration):</p>
+<template id="94cd0eb6-1ebd-4fd1-a402-34a73052ed5a"><style>
+.tabwid table{
+  border-collapse:collapse;
+  line-height:1;
+  margin-left:auto;
+  margin-right:auto;
+  border-width: 0;
+  display: table;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-color: transparent;
+}
+.tabwid_left table{
+  margin-left:0;
+}
+.tabwid_right table{
+  margin-right:0;
+}
+.tabwid td {
+    padding: 0;
+}
+.tabwid a {
+  text-decoration: none;
+}
+.tabwid thead {
+    background-color: transparent;
+}
+.tabwid tfoot {
+    background-color: transparent;
+}
+.tabwid table tr {
+background-color: transparent;
+}
+</style><div class="tabwid"><style>.cl-b1739a96{border-collapse:collapse;}.cl-b16cc522{font-family:'Courier New';font-size:8pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b16cc523{font-family:'Courier New';font-size:8pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b16cc524{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:3pt;padding-top:3pt;padding-left:3pt;padding-right:3pt;line-height: 1;background-color:transparent;}.cl-b16d6126{width:165pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b16d6127{width:45pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b16d6128{width:165pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b16d6129{width:45pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b16d612a{width:165pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b16d612b{width:45pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table class='cl-b1739a96'>
+<thead><tr style="overflow-wrap:break-word;"><td class="cl-b16d6127"><p class="cl-b16cc524"><span class="cl-b16cc522">nr</span></p></td><td class="cl-b16d6126"><p class="cl-b16cc524"><span class="cl-b16cc522">col_1</span></p></td><td class="cl-b16d6126"><p class="cl-b16cc524"><span class="cl-b16cc522">col_2</span></p></td><td class="cl-b16d6126"><p class="cl-b16cc524"><span class="cl-b16cc522">col_3</span></p></td><td class="cl-b16d6126"><p class="cl-b16cc524"><span class="cl-b16cc522">col_4</span></p></td></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-b16d6127"><p class="cl-b16cc524"><span class="cl-b16cc523">row_1</span></p></td><td class="cl-b16d6126"><p class="cl-b16cc524"><span class="cl-b16cc523">NA</span></p></td><td class="cl-b16d6126"><p class="cl-b16cc524"><span class="cl-b16cc523">All observations<br>N=</span></p></td><td class="cl-b16d6126"><p class="cl-b16cc524"><span class="cl-b16cc523">NA</span></p></td><td class="cl-b16d6126"><p class="cl-b16cc524"><span class="cl-b16cc523">NA</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b16d6129"><p class="cl-b16cc524"><span class="cl-b16cc523">row_2</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">NA</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup<br>N=</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup<br>N=</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">NA</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b16d6129"><p class="cl-b16cc524"><span class="cl-b16cc523">row_3</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup<br>N=</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup<br>N=</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup<br>N=</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup<br>N=</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b16d612b"><p class="cl-b16cc524"><span class="cl-b16cc523">row_4</span></p></td><td class="cl-b16d612a"><p class="cl-b16cc524"><span class="cl-b16cc523">NA</span></p></td><td class="cl-b16d612a"><p class="cl-b16cc524"><span class="cl-b16cc523">NA</span></p></td><td class="cl-b16d612a"><p class="cl-b16cc524"><span class="cl-b16cc523">NA</span></p></td><td class="cl-b16d612a"><p class="cl-b16cc524"><span class="cl-b16cc523">NA</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b16d6129"><p class="cl-b16cc524"><span class="cl-b16cc523">row_5</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup after exclusions<br>N=</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup after exclusions<br>N=</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup after exclusions<br>N=</span></p></td><td class="cl-b16d6128"><p class="cl-b16cc524"><span class="cl-b16cc523">Subgroup after exclusions<br>N=</span></p></td></tr></tbody></table></div></template>
+<div id="ff5816da-c3e6-4083-9e85-0efd2705da89"></div>
+<script>
+var dest = document.getElementById("ff5816da-c3e6-4083-9e85-0efd2705da89");
+var template = document.getElementById("94cd0eb6-1ebd-4fd1-a402-34a73052ed5a");
+var caption = template.content.querySelector("caption");
+if(caption) {
+  caption.style.cssText = "display:block;"
+  var newcapt = document.createElement("p");
+  newcapt.appendChild(caption)
+  dest.parentNode.insertBefore(newcapt, dest.previousSibling);
+}
+var fantome = dest.attachShadow({mode: 'open'});
+var templateContent = template.content;
+fantome.appendChild(templateContent);
+fantome.appendChild(templateContent);
+</script>
+
+<p>If you compare it to the image of the CONSORT diagram we looked at earlier you’ll notice that the arrangement of this table follows the same five layer/four column format. We do this for two reasons: first, it will help us to index into the lookup table in a logical and consistent manner later on; and second, during the design phase we can use it as a reference to help us visualise the diagram we are trying to create.</p>
+<p>One slight difference between the table and the diagram is that, even though the filled cell in layer 1 is visually oriented across columns 2 and 3, for the purposes of the lookup table it is taken as being located at the intersection of layer 1/column 2.</p>
+<p>We use NAs as placeholders for any cells that won’t be filled from this lookup table. Recall that layer 4 of the final diagram describes excluded observations; this layer will be handled separately later on so, for the purposes of this lookup table, all layer 4 cells contain NAs.</p>
+<p>Next we create a lookup table for the values we’ll use to fill each cell. Whereas the text strings were hard coded into the previous table, the values here are the results of a few count calculations on the layer variables we created for the sample dataset.</p>
+<pre class="r"><code>  matr_cell_values &lt;- matrix(
+    c(
+      NA, length(df$id), NA, NA, 
+      NA, sum(df$lyr_2 == 2), sum(df$lyr_2 == 3), NA, 
+      sum(df$lyr_3 == 1), sum(df$lyr_3 == 2), sum(df$lyr_3 == 3), sum(df$lyr_3 == 4), 
+      NA, NA, NA, NA, 
+      sum(df$lyr_5 == 1), sum(df$lyr_5 == 2), sum(df$lyr_5 == 3), sum(df$lyr_5 == 4) 
+    ), 
+    nrow = lyr_nr, 
+    byrow = TRUE,
+    dimnames = list(
+      c(seq(1, lyr_nr)), 
+      c(seq(1, col_nr)) 
+    )
+  )</code></pre>
+<p>Again, let’s look at the table we’ve created:</p>
+<template id="cff5e0b0-c3b7-458d-ae5a-880e7129da1c"><style>
+.tabwid table{
+  border-collapse:collapse;
+  line-height:1;
+  margin-left:auto;
+  margin-right:auto;
+  border-width: 0;
+  display: table;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-color: transparent;
+}
+.tabwid_left table{
+  margin-left:0;
+}
+.tabwid_right table{
+  margin-right:0;
+}
+.tabwid td {
+    padding: 0;
+}
+.tabwid a {
+  text-decoration: none;
+}
+.tabwid thead {
+    background-color: transparent;
+}
+.tabwid tfoot {
+    background-color: transparent;
+}
+.tabwid table tr {
+background-color: transparent;
+}
+</style><div class="tabwid"><style>.cl-b193d4be{border-collapse:collapse;}.cl-b18c5c5c{font-family:'Courier New';font-size:10pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b18c5c5d{font-family:'Courier New';font-size:10pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b18c5c5e{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:3pt;padding-top:3pt;padding-left:3pt;padding-right:3pt;line-height: 1;background-color:transparent;}.cl-b18c5c5f{width:41pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b18c5c60{width:45pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b18c5c61{width:41pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b18c5c62{width:45pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b18c5c63{width:41pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b18c5c64{width:45pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table class='cl-b193d4be'>
+<thead><tr style="overflow-wrap:break-word;"><td class="cl-b18c5c60"><p class="cl-b18c5c5e"><span class="cl-b18c5c5c">nr</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5c">col_1</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5c">col_2</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5c">col_3</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5c">col_4</span></p></td></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-b18c5c60"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">row_1</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">NA</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">100</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">NA</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">NA</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b18c5c60"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">row_2</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">NA</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">50</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">50</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">NA</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b18c5c60"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">row_3</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">25</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">25</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">25</span></p></td><td class="cl-b18c5c5f"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">25</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b18c5c62"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">row_4</span></p></td><td class="cl-b18c5c61"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">NA</span></p></td><td class="cl-b18c5c61"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">NA</span></p></td><td class="cl-b18c5c61"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">NA</span></p></td><td class="cl-b18c5c61"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">NA</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b18c5c64"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">row_5</span></p></td><td class="cl-b18c5c63"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">10</span></p></td><td class="cl-b18c5c63"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">10</span></p></td><td class="cl-b18c5c63"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">10</span></p></td><td class="cl-b18c5c63"><p class="cl-b18c5c5e"><span class="cl-b18c5c5d">10</span></p></td></tr></tbody></table></div></template>
+<div id="c4e48b10-ceb7-4c7b-a10c-ea27f8794a48"></div>
+<script>
+var dest = document.getElementById("c4e48b10-ceb7-4c7b-a10c-ea27f8794a48");
+var template = document.getElementById("cff5e0b0-c3b7-458d-ae5a-880e7129da1c");
+var caption = template.content.querySelector("caption");
+if(caption) {
+  caption.style.cssText = "display:block;"
+  var newcapt = document.createElement("p");
+  newcapt.appendChild(caption)
+  dest.parentNode.insertBefore(newcapt, dest.previousSibling);
+}
+var fantome = dest.attachShadow({mode: 'open'});
+var templateContent = template.content;
+fantome.appendChild(templateContent);
+fantome.appendChild(templateContent);
+</script>
+
+<p>Notice that the arrangement of this table follows the same five layer/four column format again, meaning that we can use a common indexing convention with each table. Eventually the relevant cells in the final diagram will be populated by pasting together the appropriate text and value from these two lookup tables.</p>
+<p>Finally, we create one last lookup table to handle the exclusions in layer 4:</p>
+<pre class="r"><code>  matr_lyr_4_content &lt;- matrix(
+    c(
+      sum(df$lyr_3 == 1 &amp; df$exclusion_lyr_4 == 1), sum(df$lyr_3 == 1 &amp; df$exclusion_lyr_4 == 2), sum(df$lyr_3 == 1 &amp; df$exclusion_lyr_4 == 3), 
+      sum(df$lyr_3 == 2 &amp; df$exclusion_lyr_4 == 1), sum(df$lyr_3 == 2 &amp; df$exclusion_lyr_4 == 2), sum(df$lyr_3 == 2 &amp; df$exclusion_lyr_4 == 3), 
+      sum(df$lyr_3 == 3 &amp; df$exclusion_lyr_4 == 1), sum(df$lyr_3 == 3 &amp; df$exclusion_lyr_4 == 2), sum(df$lyr_3 == 3 &amp; df$exclusion_lyr_4 == 3), 
+      sum(df$lyr_3 == 4 &amp; df$exclusion_lyr_4 == 1), sum(df$lyr_3 == 4 &amp; df$exclusion_lyr_4 == 2), sum(df$lyr_3 == 4 &amp; df$exclusion_lyr_4 == 3) 
+    ), 
+    ncol = col_nr, 
+    byrow = FALSE,
+    dimnames = list(
+      c(&quot;First exclusion, &quot;, &quot;Second exclusion, &quot;, &quot;Third exclusion, &quot;), 
+      c(seq(1, 4)) 
+    )
+  )</code></pre>
+<p>This lookup table takes a different structure to the previous two, but once again is arranged to align with layer 4 of the diagram. Here text and values are combined into a single table: the text is placed into row names and the values into the body of the table.</p>
+<template id="23dfbe89-5f5d-493b-8a56-323fa8a978ed"><style>
+.tabwid table{
+  border-collapse:collapse;
+  line-height:1;
+  margin-left:auto;
+  margin-right:auto;
+  border-width: 0;
+  display: table;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-color: transparent;
+}
+.tabwid_left table{
+  margin-left:0;
+}
+.tabwid_right table{
+  margin-right:0;
+}
+.tabwid td {
+    padding: 0;
+}
+.tabwid a {
+  text-decoration: none;
+}
+.tabwid thead {
+    background-color: transparent;
+}
+.tabwid tfoot {
+    background-color: transparent;
+}
+.tabwid table tr {
+background-color: transparent;
+}
+</style><div class="tabwid"><style>.cl-b1b50990{border-collapse:collapse;}.cl-b1aec15c{font-family:'Courier New';font-size:10pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b1aec15d{font-family:'Courier New';font-size:10pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b1aec15e{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:3pt;padding-top:3pt;padding-left:3pt;padding-right:3pt;line-height: 1;background-color:transparent;}.cl-b1aec15f{width:41pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1aec160{width:104pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1aec161{width:41pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1aec162{width:104pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1aec163{width:41pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1aec164{width:104pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table class='cl-b1b50990'>
+<thead><tr style="overflow-wrap:break-word;"><td class="cl-b1aec164"><p class="cl-b1aec15e"><span class="cl-b1aec15c">row_name</span></p></td><td class="cl-b1aec163"><p class="cl-b1aec15e"><span class="cl-b1aec15c">col_1</span></p></td><td class="cl-b1aec163"><p class="cl-b1aec15e"><span class="cl-b1aec15c">col_2</span></p></td><td class="cl-b1aec163"><p class="cl-b1aec15e"><span class="cl-b1aec15c">col_3</span></p></td></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-b1aec160"><p class="cl-b1aec15e"><span class="cl-b1aec15d">First exclusion,</span></p></td><td class="cl-b1aec15f"><p class="cl-b1aec15e"><span class="cl-b1aec15d">5</span></p></td><td class="cl-b1aec15f"><p class="cl-b1aec15e"><span class="cl-b1aec15d">5</span></p></td><td class="cl-b1aec15f"><p class="cl-b1aec15e"><span class="cl-b1aec15d">5</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1aec162"><p class="cl-b1aec15e"><span class="cl-b1aec15d">Second exclusion,</span></p></td><td class="cl-b1aec161"><p class="cl-b1aec15e"><span class="cl-b1aec15d">5</span></p></td><td class="cl-b1aec161"><p class="cl-b1aec15e"><span class="cl-b1aec15d">5</span></p></td><td class="cl-b1aec161"><p class="cl-b1aec15e"><span class="cl-b1aec15d">5</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1aec160"><p class="cl-b1aec15e"><span class="cl-b1aec15d">Third exclusion,</span></p></td><td class="cl-b1aec15f"><p class="cl-b1aec15e"><span class="cl-b1aec15d">5</span></p></td><td class="cl-b1aec15f"><p class="cl-b1aec15e"><span class="cl-b1aec15d">5</span></p></td><td class="cl-b1aec15f"><p class="cl-b1aec15e"><span class="cl-b1aec15d">5</span></p></td></tr></tbody></table></div></template>
+<div id="af694300-77a5-4d43-b63b-0f3dd925a8cb"></div>
+<script>
+var dest = document.getElementById("af694300-77a5-4d43-b63b-0f3dd925a8cb");
+var template = document.getElementById("23dfbe89-5f5d-493b-8a56-323fa8a978ed");
+var caption = template.content.querySelector("caption");
+if(caption) {
+  caption.style.cssText = "display:block;"
+  var newcapt = document.createElement("p");
+  newcapt.appendChild(caption)
+  dest.parentNode.insertBefore(newcapt, dest.previousSibling);
+}
+var fantome = dest.attachShadow({mode: 'open'});
+var templateContent = template.content;
+fantome.appendChild(templateContent);
+fantome.appendChild(templateContent);
+</script>
+
+<p><br/></p>
+<hr />
+</div>
+<div id="defining-draw-functions" class="section level2">
+<h2>Defining draw functions</h2>
+<p>Now let’s start to think about how we might generate the final diagram. Since we’ll be drawing similar components multiple times it’s most efficient to capture them within user-defined functions. In this case we’ll only need to write two functions; one to draw a closed cell (as in layer 2, for example) and another to draw an open cell (as in layer 4). Each function will index the relevant lookup tables to collect parameters defining the placement, size and content of individual cells.</p>
+<p>Let’s write the closed cell function first:</p>
+<pre class="r"><code>  geom_closed_cell &lt;- function(
+    lyr, 
+    col, 
+    arrow_x_start = matr_col_dim[[1, col]][2],
+    arrow_x_end = arrow_x_start,
+    arrow_y_start = matr_lyr_dim[[lyr - 1, 1]][1]
+  ) {
+    
+    assign(&quot;lyr_f&quot;, lyr, envir = .GlobalEnv)
+    assign(&quot;col_f&quot;, col, envir = .GlobalEnv)
+
+    list(
+      geom_rect(
+        xmin = matr_col_dim[[1, col]][1], 
+        xmax = matr_col_dim[[1, col]][3], 
+        ymin = matr_lyr_dim[[lyr, 1]][1], 
+        ymax = matr_lyr_dim[[lyr, 1]][3], 
+        color = &#39;black&#39;, 
+        fill = &#39;azure2&#39;, 
+        size = 0.25
+      ), 
+      geom_text(
+        x = matr_col_dim[[1, col]][2], 
+        y = matr_lyr_dim[[lyr, 1]][2], 
+        label = paste0(
+          matr_cell_text[lyr, col], 
+          matr_cell_values[lyr, col]
+        ), 
+        size = 2.5, 
+        fontface = &#39;bold&#39;
+      ), 
+      geom_segment(
+        x = arrow_x_start, 
+        xend = arrow_x_end, 
+        y = arrow_y_start, 
+        yend = matr_lyr_dim[[lyr, 1]][3], 
+        size = 0.15, 
+        linejoin = &quot;mitre&quot;, 
+        lineend = &quot;butt&quot;,
+        arrow = arrow(length = unit(1.5, &quot;mm&quot;), type = &quot;closed&quot;)
+      )
+    )
+  }</code></pre>
+<p>This function draws a rectangle, text box and arrow together, using ggplot’s <code>geom_rect</code>, <code>geom_text</code> and <code>geom_segment</code> objects respectively. Notice that when we want to draw multiple ggplot objects within a single function we place them within a list rather than adding them to the plot using the ‘<code>+</code>’ operator as might be expected. See Hadley Wickham’s RPubs article ‘<strong>Programming with ggplot2</strong>’ (linked <a href="https://rpubs.com/hadley/97970">here</a>) for more on this.</p>
+<p>Although most of these objects’ attributes are fixed within the main body of the function the user is required to provide some information via function arguments, most importantly the layer and column at which the cell is to be placed. Three further arguments allow the user to modify the start and/or end position of the arrow where appropriate:</p>
+<template id="c3de6105-13bb-4d56-ae2b-7f19b7f80c6b"><style>
+.tabwid table{
+  border-collapse:collapse;
+  line-height:1;
+  margin-left:auto;
+  margin-right:auto;
+  border-width: 0;
+  display: table;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-color: transparent;
+}
+.tabwid_left table{
+  margin-left:0;
+}
+.tabwid_right table{
+  margin-right:0;
+}
+.tabwid td {
+    padding: 0;
+}
+.tabwid a {
+  text-decoration: none;
+}
+.tabwid thead {
+    background-color: transparent;
+}
+.tabwid tfoot {
+    background-color: transparent;
+}
+.tabwid table tr {
+background-color: transparent;
+}
+</style><div class="tabwid"><style>.cl-b1d10e92{border-collapse:collapse;}.cl-b1c9496e{font-family:'Arial';font-size:10pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b1c9496f{font-family:'Arial';font-size:10pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b1c94970{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:3pt;padding-top:3pt;padding-left:3pt;padding-right:3pt;line-height: 1;background-color:transparent;}.cl-b1c94971{width:126pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1c94972{width:162pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1c94973{width:126pt;background-color:transparent;vertical-align: middle;border-bottom: 2pt solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1c94974{width:162pt;background-color:transparent;vertical-align: middle;border-bottom: 2pt solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1c94975{width:126pt;background-color:transparent;vertical-align: middle;border-bottom: 2pt solid rgba(0, 0, 0, 1.00);border-top: 2pt solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1c94976{width:162pt;background-color:transparent;vertical-align: middle;border-bottom: 2pt solid rgba(0, 0, 0, 1.00);border-top: 2pt solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table class='cl-b1d10e92'>
+<thead><tr style="overflow-wrap:break-word;"><td class="cl-b1c94975"><p class="cl-b1c94970"><span class="cl-b1c9496e">Argument</span></p></td><td class="cl-b1c94976"><p class="cl-b1c94970"><span class="cl-b1c9496e">Default</span></p></td></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-b1c94971"><p class="cl-b1c94970"><span class="cl-b1c9496f">Layer</span></p></td><td class="cl-b1c94972"><p class="cl-b1c94970"><span class="cl-b1c9496f">None, must be specified</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1c94971"><p class="cl-b1c94970"><span class="cl-b1c9496f">Column</span></p></td><td class="cl-b1c94972"><p class="cl-b1c94970"><span class="cl-b1c9496f">None, must be specified</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1c94971"><p class="cl-b1c94970"><span class="cl-b1c9496f">Arrow x axis start point</span></p></td><td class="cl-b1c94972"><p class="cl-b1c94970"><span class="cl-b1c9496f">Centrepoint of current column</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1c94971"><p class="cl-b1c94970"><span class="cl-b1c9496f">Arrow x axis end point</span></p></td><td class="cl-b1c94972"><p class="cl-b1c94970"><span class="cl-b1c9496f">Centrepoint of current column</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1c94973"><p class="cl-b1c94970"><span class="cl-b1c9496f">Arrow y axis start point</span></p></td><td class="cl-b1c94974"><p class="cl-b1c94970"><span class="cl-b1c9496f">Lower extent of previous layer</span></p></td></tr></tbody></table></div></template>
+<div id="b69bd648-6d5a-4190-bcb9-cbf470267c83"></div>
+<script>
+var dest = document.getElementById("b69bd648-6d5a-4190-bcb9-cbf470267c83");
+var template = document.getElementById("c3de6105-13bb-4d56-ae2b-7f19b7f80c6b");
+var caption = template.content.querySelector("caption");
+if(caption) {
+  caption.style.cssText = "display:block;"
+  var newcapt = document.createElement("p");
+  newcapt.appendChild(caption)
+  dest.parentNode.insertBefore(newcapt, dest.previousSibling);
+}
+var fantome = dest.attachShadow({mode: 'open'});
+var templateContent = template.content;
+fantome.appendChild(templateContent);
+fantome.appendChild(templateContent);
+</script>
+
+<p><br/></p>
+<p>The function also assigns a duplicate of the user-defined values of ‘<code>lyr</code>’ and ‘<code>col</code>’ to the global environment so they can later be accessed outside of the function environment. More information on this concept can be found in the ‘<strong>Environments</strong>’ chapter of Hadley Wickham’s ‘<strong>Advanced R</strong>’ book
+(linked <a href="https://adv-r.hadley.nz/environments.html">here</a>).</p>
+<p>Now let’s look at the open cell function:</p>
+<pre class="r"><code>  geom_open_cell &lt;- function(
+    lyr, 
+    col, 
+    txt_x,
+    txt_align, 
+    arrow_x_start = matr_col_dim[[1, col]][2] + (col_spc * 2), 
+    arrow_x_end = matr_col_dim[[1, col]][2] + (col_spc * 1.2) 
+  ) {
+    
+    assign(&quot;lyr_f&quot;, lyr, envir = .GlobalEnv)
+    assign(&quot;col_f&quot;, col, envir = .GlobalEnv)
+    
+    list(
+      geom_text(
+        x = txt_x, 
+        y = matr_lyr_dim[[lyr, 1]][2], 
+        label = paste0(
+          rownames(matr_lyr_4_content)[1],
+          matr_lyr_4_content[1, col], 
+          &quot;\n&quot;,
+          rownames(matr_lyr_4_content)[2],
+          matr_lyr_4_content[2, col], 
+          &quot;\n&quot;,
+          rownames(matr_lyr_4_content)[3],
+          matr_lyr_4_content[3, col]
+        ), 
+        size = 2.5,
+        hjust = txt_align
+      ), 
+      geom_segment(
+        x = arrow_x_start, 
+        xend = arrow_x_end, 
+        y = matr_lyr_dim[[lyr, 1]][2], 
+        yend = matr_lyr_dim[[lyr, 1]][2], 
+        size = 0.15, 
+        linejoin = &quot;mitre&quot;, 
+        lineend = &quot;butt&quot;,
+        arrow = arrow(length = unit(1.5, &quot;mm&quot;), type = &quot;closed&quot;) 
+      )
+    )
+  }</code></pre>
+<p>This is similar to the previous function, except it no longer draws a <code>geom_rect</code> object, some of the formatting has changed, and it requires the user to define values for two further arguments. The <code>txt_x</code> and <code>txt_align</code> arguments allow for the text in layer 4 to be arranged symmetrically around the vertical centre of the diagram.</p>
+<template id="a99e9539-0136-4eaa-bece-3aeec035128b"><style>
+.tabwid table{
+  border-collapse:collapse;
+  line-height:1;
+  margin-left:auto;
+  margin-right:auto;
+  border-width: 0;
+  display: table;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-color: transparent;
+}
+.tabwid_left table{
+  margin-left:0;
+}
+.tabwid_right table{
+  margin-right:0;
+}
+.tabwid td {
+    padding: 0;
+}
+.tabwid a {
+  text-decoration: none;
+}
+.tabwid thead {
+    background-color: transparent;
+}
+.tabwid tfoot {
+    background-color: transparent;
+}
+.tabwid table tr {
+background-color: transparent;
+}
+</style><div class="tabwid"><style>.cl-b1edd1e4{border-collapse:collapse;}.cl-b1e6d664{font-family:'Arial';font-size:10pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b1e6d665{font-family:'Arial';font-size:10pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-b1e772a4{margin:0;text-align:center;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:3pt;padding-top:3pt;padding-left:3pt;padding-right:3pt;line-height: 1;background-color:transparent;}.cl-b1e772a5{width:126pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1e772a6{width:160pt;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1e772a7{width:126pt;background-color:transparent;vertical-align: middle;border-bottom: 2pt solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1e772a8{width:160pt;background-color:transparent;vertical-align: middle;border-bottom: 2pt solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1e772a9{width:126pt;background-color:transparent;vertical-align: middle;border-bottom: 2pt solid rgba(0, 0, 0, 1.00);border-top: 2pt solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-b1e772aa{width:160pt;background-color:transparent;vertical-align: middle;border-bottom: 2pt solid rgba(0, 0, 0, 1.00);border-top: 2pt solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table class='cl-b1edd1e4'>
+<thead><tr style="overflow-wrap:break-word;"><td class="cl-b1e772a9"><p class="cl-b1e772a4"><span class="cl-b1e6d664">Argument</span></p></td><td class="cl-b1e772aa"><p class="cl-b1e772a4"><span class="cl-b1e6d664">Default</span></p></td></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-b1e772a5"><p class="cl-b1e772a4"><span class="cl-b1e6d665">Layer</span></p></td><td class="cl-b1e772a6"><p class="cl-b1e772a4"><span class="cl-b1e6d665">None, must be specified</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1e772a5"><p class="cl-b1e772a4"><span class="cl-b1e6d665">Column</span></p></td><td class="cl-b1e772a6"><p class="cl-b1e772a4"><span class="cl-b1e6d665">None, must be specified</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1e772a5"><p class="cl-b1e772a4"><span class="cl-b1e6d665">Text x axis placement</span></p></td><td class="cl-b1e772a6"><p class="cl-b1e772a4"><span class="cl-b1e6d665">None, must be specified</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1e772a5"><p class="cl-b1e772a4"><span class="cl-b1e6d665">Text alignment</span></p></td><td class="cl-b1e772a6"><p class="cl-b1e772a4"><span class="cl-b1e6d665">None, must be specified</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1e772a5"><p class="cl-b1e772a4"><span class="cl-b1e6d665">Arrow x axis start point</span></p></td><td class="cl-b1e772a6"><p class="cl-b1e772a4"><span class="cl-b1e6d665">Centrepoint of current column</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-b1e772a7"><p class="cl-b1e772a4"><span class="cl-b1e6d665">Arrow x axis end point</span></p></td><td class="cl-b1e772a8"><p class="cl-b1e772a4"><span class="cl-b1e6d665">Centrepoint of current column</span></p></td></tr></tbody></table></div></template>
+<div id="8d7da695-4481-4f88-8d05-bd77c3de4271"></div>
+<script>
+var dest = document.getElementById("8d7da695-4481-4f88-8d05-bd77c3de4271");
+var template = document.getElementById("a99e9539-0136-4eaa-bece-3aeec035128b");
+var caption = template.content.querySelector("caption");
+if(caption) {
+  caption.style.cssText = "display:block;"
+  var newcapt = document.createElement("p");
+  newcapt.appendChild(caption)
+  dest.parentNode.insertBefore(newcapt, dest.previousSibling);
+}
+var fantome = dest.attachShadow({mode: 'open'});
+var templateContent = template.content;
+fantome.appendChild(templateContent);
+fantome.appendChild(templateContent);
+</script>
+
+<p><br/></p>
+<hr />
+</div>
+<div id="drawing-the-final-diagram" class="section level2">
+<h2>Drawing the final diagram</h2>
+<p>Now we can use our user-defined functions and lookup tables to draw the final consort diagram.</p>
+<p>At this point, if you haven’t already done so, you’ll need to install the ggplot2 package, which can be done by installing tidyverse.</p>
+<pre class="r"><code>  install.packages(&quot;tidyverse&quot;)
+  library(tidyverse)</code></pre>
+<p>We can now initialise our call to ggplot2 using the plot area data frame we created, and link the x and y scale limits to our <code>plot_width</code> and <code>plot_height</code> global variables, respectively. We then start to add components to the diagram using the ‘<code>+</code>’ operator as normal.</p>
+<p>Given the unique formatting of the cell in layer 1 (it is visually oriented across columns 2 and 3 and does not require an arrow) we write code to define its <code>geom_rect</code> and <code>geom_text</code> objects explicitly. From layer 2 onwards, however, all cells are drawn using the <code>geom_closed_cell()</code> or <code>geom_open_cell()</code> functions. Notice that we use the same convention of indexing into our lookup tables with double and single square brackets, but now we specify the layer or column number to use by referencing the duplicated ‘<code>lyr_f</code>’ and ‘<code>col_f</code>’ variables we had placed into the global environment. Finally, we call <code>theme_void()</code> to suppress the axes, ticks and gridlines so that only the final diagram remains.</p>
+<pre class="r"><code>  CONSORT_diag &lt;- ggplot(plot_area, aes(x, y)) + 
+    scale_x_continuous(
+      breaks = c(unlist(matr_col_dim), plot_width), 
+      labels = c(unlist(matr_col_dim), plot_width), 
+      limits = c(0, plot_width), 
+      expand = c(0, 0)
+    ) +
+    scale_y_continuous(
+      breaks = c(unlist(matr_lyr_dim), plot_height), 
+      labels = c(unlist(matr_lyr_dim), plot_height), 
+      limits = c(0, plot_height), 
+      expand = c(0, 0)
+    ) +
+  # layer 1:
+    geom_rect(
+      xmin = matr_col_dim[[1, 2]][2] + (col_spc / 2), 
+      xmax = matr_col_dim[[1, 3]][2] - (col_spc / 2), 
+      ymin = matr_lyr_dim[[1, 1]][1], 
+      ymax = matr_lyr_dim[[1, 1]][3], 
+      color = &#39;black&#39;, 
+      fill = &#39;azure2&#39;, 
+      size = 0.25
+    ) +
+    geom_text(
+      x = matr_col_dim[[1, 2]][3] + (col_spc / 2), 
+      y = matr_lyr_dim[[1, 1]][2], 
+      label = paste0(
+        matr_cell_text[1, 2], 
+        matr_cell_values[1, 2]
+      ), 
+      size = 2.5, 
+      fontface = &#39;bold&#39;
+    ) +
+  # layer 2:
+    geom_closed_cell(
+      lyr = 2, 
+      col = 2, 
+      arrow_x_start = matr_col_dim[[1, col_f]][3] + (col_spc / 2), 
+      arrow_x_end = matr_col_dim[[1, col_f]][2]
+    ) +
+    geom_closed_cell(
+      lyr = 2, 
+      col = 3, 
+      arrow_x_start = matr_col_dim[[1, (col_f - 1)]][3] + (col_spc / 2), 
+      arrow_x_end = matr_col_dim[[1, col_f]][2]
+    ) +
+  # layer 3:
+    geom_closed_cell(
+      lyr = 3, 
+      col = 1, 
+      arrow_x_start = matr_col_dim[[1, (col_f + 1)]][2], 
+      arrow_x_end = matr_col_dim[[1, col_f]][2]
+    ) + 
+    geom_closed_cell(
+      lyr = 3, 
+      col = 2
+    ) +
+    geom_closed_cell(
+      lyr = 3, 
+      col = 3
+    ) +
+    geom_closed_cell(
+      lyr = 3, 
+      col = 4, 
+      arrow_x_start = matr_col_dim[[1, (col_f - 1)]][2], 
+      arrow_x_end = matr_col_dim[[1, col_f]][2]
+    ) + 
+  # layer 4: 
+    geom_open_cell(
+      lyr = 4, 
+      col = 1, 
+      txt_x = matr_col_dim[[1, col_f]][2] + col_spc,
+      txt_align = &#39;right&#39;
+    ) +
+    geom_open_cell(
+      lyr = 4, 
+      col = 2, 
+      txt_x = matr_col_dim[[1, col_f]][2] + col_spc,
+      txt_align = &#39;right&#39;
+    ) +
+    geom_open_cell(
+      lyr = 4, 
+      col = 3, 
+      txt_x = matr_col_dim[[1, col_f]][2] - col_spc, 
+      txt_align = &#39;left&#39;, 
+      arrow_x_start = matr_col_dim[[1, col_f]][2] - (col_spc * 2), 
+      arrow_x_end = matr_col_dim[[1, col_f]][2] - (col_spc * 1.2)
+    ) +
+    geom_open_cell(
+      lyr = 4, 
+      col = 4, 
+      txt_x = matr_col_dim[[1, col_f]][2] - col_spc, 
+      txt_align = &#39;left&#39;, 
+      arrow_x_start = matr_col_dim[[1, col_f]][2] - (col_spc * 2), 
+      arrow_x_end = matr_col_dim[[1, col_f]][2] - (col_spc * 1.2)
+    ) + 
+  # layer 5:
+    geom_closed_cell(
+      lyr = 5, 
+      col = 1, 
+      arrow_x_start = matr_col_dim[[1, col_f]][2] + (col_spc * 2), 
+      arrow_y_start = matr_lyr_dim[[(lyr_f - 2), 1]][1]
+    ) +
+    geom_closed_cell(
+      lyr = 5, 
+      col = 2, 
+      arrow_x_start = matr_col_dim[[1, col_f]][2] + (col_spc * 2), 
+      arrow_y_start = matr_lyr_dim[[(lyr_f - 2), 1]][1]
+    ) +
+    geom_closed_cell(
+      lyr = 5, 
+      col = 3, 
+      arrow_x_start = matr_col_dim[[1, col_f]][2] - (col_spc * 2), 
+      arrow_y_start = matr_lyr_dim[[(lyr_f - 2), 1]][1]
+    ) +
+    geom_closed_cell(
+      lyr = 5, 
+      col = 4, 
+      arrow_x_start = matr_col_dim[[1, col_f]][2] - (col_spc * 2), 
+      arrow_y_start = matr_lyr_dim[[(lyr_f - 2), 1]][1]
+    ) +
+    theme_void()
+
+  CONSORT_diag</code></pre>
+<style>
+  body {
+  text-align: justify}
+</style>
+</div>
+
+  
+  <h4><i class="fa-share-alt" aria-hidden="true"></i>&nbsp;Share!</h4>
+<ul class="share-buttons">
+	<li><a href="https://www.facebook.com/sharer/sharer.php?u=%2fpost%2fa-tutorial-on-programmatically-drawing-consort-diagrams-from-data-using-r-and-ggplot2%2f" target="_blank" title="Share on Facebook"><i class="fa-facebook" aria-hidden="true"></i><span class="sr-only">Share on Facebook</span></a>
+	</li>&nbsp;&nbsp;&nbsp;
+	<li><a href="https://twitter.com/intent/tweet?source=%2fpost%2fa-tutorial-on-programmatically-drawing-consort-diagrams-from-data-using-r-and-ggplot2%2f&via=HorribleGeek" target="_blank" title="Tweet"><i class="fa-twitter" aria-hidden="true"></i><span class="sr-only">Tweet</span></a>
+	</li>&nbsp;&nbsp;&nbsp;
+	<li><a href="https://plus.google.com/share?url=%2fpost%2fa-tutorial-on-programmatically-drawing-consort-diagrams-from-data-using-r-and-ggplot2%2f" target="_blank" title="Share on Google+"><i class="fa-google-plus" aria-hidden="true"></i><span class="sr-only">Share on Google+</span></a>
+	</li>&nbsp;&nbsp;&nbsp;
+	<li><a href="http://www.tumblr.com/share?v=3&u=%2fpost%2fa-tutorial-on-programmatically-drawing-consort-diagrams-from-data-using-r-and-ggplot2%2f" target="_blank" title="Post to Tumblr"><i class="fa-tumblr" aria-hidden="true"></i><span class="sr-only">Post to Tumblr</span></a>
+	</li>&nbsp;&nbsp;&nbsp;
+	<li><a href="http://pinterest.com/pin/create/button/?url=%2fpost%2fa-tutorial-on-programmatically-drawing-consort-diagrams-from-data-using-r-and-ggplot2%2f" target="_blank" title="Pin it"><i class="fa-pinterest-p" aria-hidden="true"></i><span class="sr-only">Pin it</span></a>
+	</li>&nbsp;&nbsp;&nbsp;
+	<li><a href="http://www.reddit.com/submit?url=%2fpost%2fa-tutorial-on-programmatically-drawing-consort-diagrams-from-data-using-r-and-ggplot2%2f" target="_blank" title="Submit to Reddit"><i class="fa-reddit-alien" aria-hidden="true"></i><span class="sr-only">Submit to Reddit</span></a>
+	</li>
+</ul>
+
+
+<style>
+	ul.share-buttons{
+	  list-style: none;
+	  padding: 0;
+	}
+
+	ul.share-buttons li{
+	  display: inline;
+	}
+
+	ul.share-buttons .sr-only{
+	  position: absolute;
+	  clip: rect(1px 1px 1px 1px);
+	  clip: rect(1px, 1px, 1px, 1px);
+	  padding: 0;
+	  border: 0;
+	  height: 1px;
+	  width: 1px;
+	  overflow: hidden;
+	}
+</style>
+
+
+  
+<div class="prev-next-post pure-g">
+  <div class="pure-u-1-24" style="text-align: left;">
+    
+  </div>
+  <div class="pure-u-10-24">
+    
+  </div>
+  <div class="pure-u-2-24">
+    &nbsp;
+  </div>
+  <div class="pure-u-10-24">
+    
+  </div>
+  <div class="pure-u-1-24" style="text-align: right;">
+    
+  </div>
+</div>
+
+
+
+  
+
+</div>
+
+</div>
+</div>
+<script src="/js/ui.js"></script>
+<script src="/js/menus.js"></script>
+
+
+
+
+
+
+<script src="/js/math-code.js"></script>
+  <script async src="//cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+  
+
+
+</body>
+</html>
+
