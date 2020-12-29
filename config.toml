@@ -1,4 +1,4 @@
-baseurl = "/"
+baseurl = "https://ma-json.netlify.app/"
 languageCode = "en"
 title = "Matt Johnson"
 theme = "blackburn"
